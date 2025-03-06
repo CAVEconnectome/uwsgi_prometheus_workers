@@ -9,7 +9,7 @@ from prometheus_client import start_http_server, Gauge
 
 # Create a Prometheus gauge for busy workers
 busy_workers_gauge = Gauge("uwsgi_busy_workers", "Number of busy uWSGI workers")
-fraction_workers_busy_gauge = Gauge("uwsgi_busy_frac", "Fraction of workers that are busy")
+fraction_workers_busy_gauge = Gauge("uwsgi_percent_busy_workers", "Fraction of workers that are busy")
 
 # Store the current fraction in a global variable for the readiness check
 current_fraction_busy = 0.0
@@ -37,9 +37,9 @@ def scrape_uwsgi_stats():
 
         total_workers = len(workers) if workers else 1  # Avoid division by zero
         fraction = float(busy_count) / float(total_workers)
-
+        
         busy_workers_gauge.set(busy_count)
-        fraction_workers_busy_gauge.set(fraction)
+        fraction_workers_busy_gauge.set(max(fraction, 0.00001))
         current_fraction_busy = fraction
 
     except Exception as e:
