@@ -10,38 +10,42 @@ from prometheus_client import start_http_server, Gauge
 # Create a Prometheus gauge for busy workers
 busy_workers_gauge = Gauge("uwsgi_busy_workers", "Number of busy uWSGI workers")
 fraction_workers_busy_gauge = Gauge("uwsgi_perc_busy_workers", "Fraction of workers that are busy")
-
+total_rss = Gauge("uwsgi_total_rss", "Total RSS of uWSGI workers")
 # Store the current fraction in a global variable for the readiness check
 current_fraction_busy = 0.0
+current_rss_total = 0
 
 # Where your Stats Server is exposed
 UWSGI_STATS_URL = os.environ.get("UWSGI_STATS_URL", "http://127.0.0.1:9192")
 SCRAPE_INTERVAL = float(os.environ.get("SCRAPE_INTERVAL", "5"))
 METRICS_PORT = int(os.environ.get("METRICS_PORT", "9101"))
 READINESS_PORT = int(os.environ.get("READINESS_PORT", "8080"))
+RSS_THRESHOLD_BYTES = int(os.environ.get("RSS_THRESHOLD_BYTES", "100000000000"))
 
 def scrape_uwsgi_stats():
     """Scrape uWSGI stats and update Prometheus metrics."""
     global current_fraction_busy
-
+    global current_rss_total
     try:
         resp = requests.get(UWSGI_STATS_URL)
         data = resp.json()
         workers = data.get("workers", [])
         busy_count = 0
-
+        total_rss = 0
         for w in workers:
             # Typically "idle" vs "busy" – adjust as needed
             if w.get("status") == "busy":
                 busy_count += 1
+            total_rss += w.get("rss", 0)
 
         total_workers = len(workers) if workers else 1  # Avoid division by zero
         fraction = float(busy_count) / float(total_workers)
         
         busy_workers_gauge.set(busy_count)
+        total_rss.set(total_rss)
         fraction_workers_busy_gauge.set(int(100*fraction))
         current_fraction_busy = fraction
-
+        current_rss_total = total_rss
     except Exception as e:
         print(f"Error scraping uWSGI stats: {e}")
 
@@ -53,6 +57,10 @@ class ReadinessHandler(BaseHTTPRequestHandler):
             self.send_response(503)
             self.end_headers()
             self.wfile.write(b"All uWSGI workers are busy")
+        elif (current_rss_total >= RSS_THRESHOLD_BYTES):
+            self.send_response(503)
+            self.end_headers()
+            self.wfile.write(b"RSS memory usage is above threshold")
         else:
             self.send_response(200)
             self.end_headers()
