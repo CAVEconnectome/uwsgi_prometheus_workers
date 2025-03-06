@@ -12,6 +12,7 @@ fraction_workers_busy = Gauge("uwsgi_fraction_workers_busy", "Fraction of worker
 # Where your Stats Server is exposed
 UWSGI_STATS_URL = os.environ.get("UWSGI_STATS_URL", "http://127.0.0.1:9192")
 SCRAPE_INTERVAL = float(os.environ.get("SCRAPE_INTERVAL", "5"))
+METRICS_PORT = int(os.environ.get("METRICS_PORT", "9101"))
 
 def scrape_uwsgi_stats():
     try:
@@ -32,7 +33,7 @@ def scrape_uwsgi_stats():
 
 if __name__ == "__main__":
     # Start a basic HTTP server on port 9101 for Prometheus to scrape
-    start_http_server(9101)
+    start_http_server(METRICS_PORT)
 
     # Scrape in a loop
     while True:
