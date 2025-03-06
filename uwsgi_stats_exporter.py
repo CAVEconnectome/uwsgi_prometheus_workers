@@ -20,7 +20,7 @@ UWSGI_STATS_URL = os.environ.get("UWSGI_STATS_URL", "http://127.0.0.1:9192")
 SCRAPE_INTERVAL = float(os.environ.get("SCRAPE_INTERVAL", "5"))
 METRICS_PORT = int(os.environ.get("METRICS_PORT", "9101"))
 READINESS_PORT = int(os.environ.get("READINESS_PORT", "8080"))
-RSS_THRESHOLD_BYTES = int(os.environ.get("RSS_THRESHOLD_BYTES", "100000000000"))
+RSS_THRESHOLD_BYTES = int(os.environ.get("RSS_THRESHOLD_GB", "100")*1024*1024*1024)
 
 def scrape_uwsgi_stats():
     """Scrape uWSGI stats and update Prometheus metrics."""
