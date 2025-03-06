@@ -20,7 +20,8 @@ UWSGI_STATS_URL = os.environ.get("UWSGI_STATS_URL", "http://127.0.0.1:9192")
 SCRAPE_INTERVAL = float(os.environ.get("SCRAPE_INTERVAL", "5"))
 METRICS_PORT = int(os.environ.get("METRICS_PORT", "9101"))
 READINESS_PORT = int(os.environ.get("READINESS_PORT", "8080"))
-RSS_THRESHOLD_BYTES = int(os.environ.get("RSS_THRESHOLD_GB", "100")*1024*1024*1024)
+RSS_THRESHOLD_BYTES = float(os.environ.get("RSS_THRESHOLD_GB", "100"))*1024*1024*1024
+
 
 def scrape_uwsgi_stats():
     """Scrape uWSGI stats and update Prometheus metrics."""
@@ -49,6 +50,7 @@ def scrape_uwsgi_stats():
     except Exception as e:
         print(f"Error scraping uWSGI stats: {e}")
 
+
 class ReadinessHandler(BaseHTTPRequestHandler):
     """A simple HTTP handler that returns 503 if all uWSGI workers are busy."""
     def do_GET(self):
@@ -66,11 +68,13 @@ class ReadinessHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(b"OK")
 
+
 def run_readiness_server():
     """Run a small HTTP server to handle readiness checks."""
     server = HTTPServer(("", READINESS_PORT), ReadinessHandler)
     print(f"Readiness server running on port {READINESS_PORT}")
     server.serve_forever()
+
 
 if __name__ == "__main__":
     # Start a thread for the readiness server
