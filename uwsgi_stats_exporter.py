@@ -32,12 +32,12 @@ def scrape_uwsgi_stats():
         data = resp.json()
         workers = data.get("workers", [])
         busy_count = 0
-        total_rss = 0
+        total_rss = 0.0
         for w in workers:
             # Typically "idle" vs "busy" – adjust as needed
             if w.get("status") == "busy":
                 busy_count += 1
-            total_rss += w.get("rss", 0)
+            total_rss += int(w.get("rss", 0))
 
         total_workers = len(workers) if workers else 1  # Avoid division by zero
         fraction = float(busy_count) / float(total_workers)
