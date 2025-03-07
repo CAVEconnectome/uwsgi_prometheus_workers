@@ -10,7 +10,7 @@ from prometheus_client import start_http_server, Gauge
 # Create a Prometheus gauge for busy workers
 busy_workers_gauge = Gauge("uwsgi_busy_workers", "Number of busy uWSGI workers")
 fraction_workers_busy_gauge = Gauge("uwsgi_perc_busy_workers", "Fraction of workers that are busy")
-total_rss = Gauge("uwsgi_total_rss", "Total RSS of uWSGI workers")
+total_rss_gauge = Gauge("uwsgi_total_rss", "Total RSS of uWSGI workers")
 # Store the current fraction in a global variable for the readiness check
 current_fraction_busy = 0.0
 current_rss_total = 0
@@ -43,7 +43,7 @@ def scrape_uwsgi_stats():
         fraction = float(busy_count) / float(total_workers)
         
         busy_workers_gauge.set(busy_count)
-        total_rss.set(total_rss)
+        total_rss_gauge.set(total_rss)
         fraction_workers_busy_gauge.set(int(100*fraction))
         current_fraction_busy = fraction
         current_rss_total = total_rss
